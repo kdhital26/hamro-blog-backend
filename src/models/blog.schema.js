@@ -15,7 +15,7 @@ const blogSchema = mongoose.Schema({
         type: Boolean,
         trim: true,
     },
-    // headerId: {type: mongoose.Schema.Types.ObjectId, ref: 'header'}
+    ratingId: {type: mongoose.Schema.Types.ObjectId, ref: 'blograting'},
     description: {
         type: String,
         required: true,

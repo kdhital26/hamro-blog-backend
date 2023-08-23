@@ -1,4 +1,5 @@
 const blogSchema = require('../models/blog.schema');
+const ratingSchema = require('../models/blogRating.schema')
 // const headerSchema = require('../models/header.schema')
 
 exports.getAllBlog = async (req, res) => {
@@ -9,9 +10,7 @@ exports.getAllBlog = async (req, res) => {
             .then(result => {
                 if(result) {
                     let totalConent = {
-                        title: '',
-                        _id: '',
-                       value: []
+                        title: '', _id: '', value: []
                     }
                     let desResponse = result.description.split('--SPLIT_HERE--');
                     let imageResponse = result.file.split(',');
@@ -31,6 +30,7 @@ exports.getAllBlog = async (req, res) => {
         } else {
             const filter = {active: true}
             await blogSchema.find(filter)
+            .populate('ratingId')
             .then(result => {
                 if(result) {
                     res.status(200).send({data: result});
@@ -115,6 +115,31 @@ exports.deleteBlog = async (req, res) => {
     }
 }
 
+exports.setRating = async (req, res) => {
+    const { body: {id, rating, files} } = req;
+    try {
+        const updateType = {new: true};
+        const ratingModel = new ratingSchema({
+            blogId: id,
+            rating: rating
+        });
+        await ratingModel.save(ratingModel).then(result => {
+            if(result) {
+                const filterValue = {_id: id};
+                const updatedValue = {ratingId: id};
+                blogSchema.findOneAndUpdate(filterValue, updatedValue, updateType);
+                res.status(200).send({message: 'Thank you for your rating', data: result});
+            } else {
+                res.status(400).send({message: 'Please try again'});
+            }
+        }).catch(error => {
+            res.status(400).send({message: 'Please try again!' + error});
+        })
+    } catch (error) {
+        res.status(500).status({message: error})
+    }
+}
+
 
 function setBlogValues(body, files) {
     const  {_id, file, description, title } = body;
@@ -126,11 +151,13 @@ function setBlogValues(body, files) {
     if(file) {
         path = file
     }
-    if(files.length > 0)
-    path += ',' + files.map(res => res.path)?.toString();
+    if(files.length > 1) {
+        path += ',' + files.map(res => res.path)?.toString();
+    } else if(files.length === 1) {
+        path +=  files.map(res => res.path)?.toString();
+    }
     blog.file = path;
     blog.active = true;
-    console.log(blog, 'blog her')
     return blog;
 
 }
