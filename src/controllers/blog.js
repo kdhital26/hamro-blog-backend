@@ -226,7 +226,7 @@ function  trendingTopic(value) {
     })
 }
 
-//testing 
+//testing //testing toohere
 exports.deleteAll = async (req, res) => {
     try {
       await blogSchema.deleteMany({});
