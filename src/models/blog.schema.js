@@ -16,6 +16,16 @@ const blogSchema = mongoose.Schema({
         trim: true,
     },
     ratingId: {type: mongoose.Schema.Types.ObjectId, ref: 'blograting'},
+    commentId: [
+        {
+            type: mongoose.Schema.Types.ObjectId, ref: 'comment'
+        }
+    ],
+    count: {
+        type: Number,
+        trim: true,
+        default: 0
+    },
     description: {
         type: String,
         required: true,

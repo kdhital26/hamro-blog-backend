@@ -1,5 +1,6 @@
 const blogSchema = require('../models/blog.schema');
 const ratingSchema = require('../models/blogRating.schema')
+const commentSchema = require('../models/blogComments.schema')
 // const headerSchema = require('../models/header.schema')
 
 exports.getAllBlog = async (req, res) => {
@@ -7,6 +8,8 @@ exports.getAllBlog = async (req, res) => {
         const { query : {_id, page, limit}} = req;
         if(_id){
             await blogSchema.findById(_id)
+            .populate('ratingId')
+            .populate('commentId')
             .then(result => {
                 if(result) {
                     let totalConent = {
@@ -14,6 +17,7 @@ exports.getAllBlog = async (req, res) => {
                     }
                     let desResponse = result.description.split('--SPLIT_HERE--');
                     let imageResponse = result.file.split(',');
+                    trendingTopic(result);
                     for(let i = 0; i < imageResponse.length; i++) {
                         let blogData = {description: '', file: ''}
                          blogData.description = desResponse[i];
@@ -22,7 +26,7 @@ exports.getAllBlog = async (req, res) => {
                     } 
                     totalConent.title = result.title;
                     totalConent._id = result._id;
-                    res.status(200).send({data: totalConent});
+                    res.status(200).send({data: totalConent, comments: result.commentId, rating: result.ratingId});
                 } else {
                     res.status(500).send({message: 'Could not find it'});
                 }
@@ -31,6 +35,7 @@ exports.getAllBlog = async (req, res) => {
             const filter = {active: true}
             await blogSchema.find(filter)
             .populate('ratingId')
+            .populate('commentId')
             .then(result => {
                 if(result) {
                     res.status(200).send({data: result});
@@ -116,7 +121,7 @@ exports.deleteBlog = async (req, res) => {
 }
 
 exports.setRating = async (req, res) => {
-    const { body: {id, rating, files} } = req;
+    const { body: {id, rating} } = req;
     try {
         const updateType = {new: true};
         const ratingModel = new ratingSchema({
@@ -126,9 +131,13 @@ exports.setRating = async (req, res) => {
         await ratingModel.save(ratingModel).then(result => {
             if(result) {
                 const filterValue = {_id: id};
-                const updatedValue = {ratingId: id};
-                blogSchema.findOneAndUpdate(filterValue, updatedValue, updateType);
-                res.status(200).send({message: 'Thank you for your rating', data: result});
+                const updatedValue = {ratingId: result.id};
+                blogSchema.findOneAndUpdate(filterValue, updatedValue, updateType)
+                .then(data => {
+                    if(data) {
+                        res.status(200).send({message: 'Thank you for your rating', data: result});
+                    }
+                })
             } else {
                 res.status(400).send({message: 'Please try again'});
             }
@@ -137,6 +146,51 @@ exports.setRating = async (req, res) => {
         })
     } catch (error) {
         res.status(500).status({message: error})
+    }
+}
+
+exports.createComments = async(req, res) => {
+    const { body: {id, comment} } = req;
+    const updateType = {new: true, findAndModify: true};
+    try {
+        const comments = new commentSchema({
+            comments: comment
+        });
+        await comments.save(comments).then(result => {
+            if(result) {
+                const filterValue = {_id: id};
+                blogSchema.findOneAndUpdate(filterValue, { $push: { commentId: result._id } }, updateType)
+                .then(data => {
+                    if(data) {
+                        res.status(200).send({message: 'Successfully Created Comments', data: result});
+                    }
+                })
+            } else {
+                res.status(500).send({message: 'Please Try Again'});
+            }
+        }).catch(error => {
+            res.status(501).send({message: 'Please Try Again!', error: error});
+
+        })
+    } catch(error) {
+        res.status(500).send({message: error})
+    }
+
+}
+
+exports.getAllTrendingTopic = async (req, res) => {
+    try {
+        let filter = {active: true};
+        await blogSchema.find(filter)
+        .sort({count: -1})
+        .limit(5)
+        .skip(0)
+        .then(result => {
+            res.status(200).send({message: '', data: result});
+        })
+    } catch (error) {
+        res.status(500).send({message: error});
+        
     }
 }
 
@@ -160,6 +214,16 @@ function setBlogValues(body, files) {
     blog.active = true;
     return blog;
 
+}
+
+function  trendingTopic(value) {
+    const filterValue = {_id: value._id}
+    const totalCount = value.count += 1;
+    const updateType = {new: true, findAndModify: true};
+    blogSchema.findOneAndUpdate(filterValue, {count: totalCount}, updateType)
+        .then(data => {
+        return data;
+    })
 }
 
 //testing 
