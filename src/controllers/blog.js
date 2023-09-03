@@ -194,6 +194,29 @@ exports.getAllTrendingTopic = async (req, res) => {
     }
 }
 
+exports.getLatest = async (req, res) => {
+    try {
+        const { body: {page, limit} } = req;
+        filter = {active: true}
+        sortingValue = {createdAt: -1}
+        blogSchema.find(filter)
+        .skip((page - 1) * limit)
+        .limit(limit)
+        .sort(sortingValue)
+        .then(result => {
+            if(result) {
+                res.status(200).send({data: result});
+            }
+        })
+        .catch(error => {
+            res.status(501).send({message: error});
+        })
+
+    } catch (error) {
+        res.status(500).send({message: error})
+    }
+}
+
 
 function setBlogValues(body, files) {
     const  {_id, file, description, title } = body;
@@ -215,6 +238,8 @@ function setBlogValues(body, files) {
     return blog;
 
 }
+
+
 
 function  trendingTopic(value) {
     const filterValue = {_id: value._id}
