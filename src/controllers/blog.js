@@ -17,11 +17,13 @@ exports.getAllBlog = async (req, res) => {
                     }
                     let desResponse = result.description.split('--SPLIT_HERE--');
                     let imageResponse = result.file.split(',');
+                    let cloudinaryImage = result.cloudinaryPath.split(',');
                     trendingTopic(result);
                     for(let i = 0; i < imageResponse.length; i++) {
-                        let blogData = {description: '', file: ''}
+                        let blogData = {description: '', file: '', cloudImage:''}
                          blogData.description = desResponse[i];
                          blogData.file = imageResponse[i];
+                         blogData.cloudImage = cloudinaryImage[i];
                          totalConent.value.push(blogData);
                     } 
                     totalConent.title = result.title;
@@ -53,8 +55,7 @@ exports.getAllBlog = async (req, res) => {
 exports.createBlog = async (req, res) => {
     try {
         const { body, files } = req;
-
-        let blog = setBlogValues(body, files);
+        let blog = setBlogValues(body, files, req.cloudinaryPath);
         await blog.save(blog).then(result => {
             if(result) {
                res.status(200).send({message: 'Saved Successfully', data: result})
@@ -75,8 +76,7 @@ exports.updateBlog = async (req, res) => {
         const { _id } = req.body;
         const { files } = req;
         const updateType = {new: true, upsert: true};
-
-        const blogUpdate = setBlogValues(req.body, files);
+        const blogUpdate = setBlogValues(req.body, files, req.cloudinaryPath);
          blogSchema.findByIdAndUpdate(_id, blogUpdate, updateType)
          .then(result => {
             if(result) {
@@ -218,23 +218,29 @@ exports.getLatest = async (req, res) => {
 }
 
 
-function setBlogValues(body, files) {
-    const  {_id, file, description, title } = body;
+function setBlogValues(body, files, cloudinaryURL) {
+    const  {_id, file, description, title, cloudImagPath } = body;
     let path = '';
     let blog = new blogSchema();
     blog._id = _id;
     blog.description = description;
     blog.title = title;
     if(file) {
-        path = file
+        path = file;
+        blog.cloudinaryPath = cloudImagPath;
     }
-    if(files.length > 1) {
+    if(file && files.length > 0) {
         path += ',' + files.map(res => res.path)?.toString();
-    } else if(files.length === 1) {
-        path +=  files.map(res => res.path)?.toString();
+        let cloudPath = cloudinaryURL.toString();
+        blog.cloudinaryPath += cloudPath;
+    } else if (files.length > 0) {
+        path = files.map(res => res.path)?.toString();
+        blog.cloudinaryPath = cloudinaryURL.toString();
     }
+    // return;
     blog.file = path;
     blog.active = true;
+    // return;
     return blog;
 
 }
@@ -255,7 +261,9 @@ function  trendingTopic(value) {
 exports.deleteAll = async (req, res) => {
     try {
       await blogSchema.deleteMany({});
-    //   await headerSchema.deleteMany({});
+      await ratingSchema.deleteMany({});
+      await commentSchema.deleteMany({});
+      //   await headerSchema.deleteMany({});
       res.send({message: 'success'})
     } catch (error) {
       res.status(400).send({error: error})
