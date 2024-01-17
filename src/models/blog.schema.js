@@ -34,6 +34,11 @@ const blogSchema = mongoose.Schema({
     cloudinaryPath:{
         type: String,
         trim: true
+    },
+    category: {
+        type: String,
+        trim: true,
+        required: true
     }
 }, { timestamps: true });
 

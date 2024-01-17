@@ -11,6 +11,7 @@ const cloudinaryHelper = require('../middleware/cloudinary').helper
 routes.get('/getallblogs', blogController.getAllBlog);
 routes.get('/getAllTrendingTopic', blogController.getAllTrendingTopic);
 routes.post('/getLatest', blogController.getLatest);
+routes.post('/getBlogByContent', blogController.getBlogByContent)
 routes.post('/createblog', files.array('image'), ((req, res, next) => {
     cloudinaryHelper(req.files, req, next);
 }), blogController.createBlog);

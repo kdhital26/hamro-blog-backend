@@ -55,6 +55,7 @@ exports.getAllBlog = async (req, res) => {
 exports.createBlog = async (req, res) => {
     try {
         const { body, files } = req;
+        console.log(body, 'body here')
         let blog = setBlogValues(body, files, req.cloudinaryPath);
         await blog.save(blog).then(result => {
             if(result) {
@@ -217,14 +218,40 @@ exports.getLatest = async (req, res) => {
     }
 }
 
+exports.getBlogByContent = async (req, res) => {
+    try {
+        const { body: {page, limit, category} } = req;
+        filter = {active: true, category: category?.toLowerCase()}
+        sortingValue = {createdAt: -1}
+        blogSchema.find(filter)
+        .skip((page - 1) * limit)
+        .limit(limit)
+        .sort(sortingValue)
+        .then(result => {
+            if(result) {
+                res.status(200).send({data: result});
+            }
+        })
+        .catch(error => {
+            res.status(501).send({message: error});
+        })
+
+    } catch (error) {
+       
+    }
+
+}
+
 
 function setBlogValues(body, files, cloudinaryURL) {
-    const  {_id, file, description, title, cloudImagPath } = body;
+    const  {_id, file, description, title, cloudImagPath, category } = body;
     let path = '';
     let blog = new blogSchema();
     blog._id = _id;
     blog.description = description;
     blog.title = title;
+    blog.category = category?.toLowerCase();
+    console.log(body, category, 'here')
     if(file) {
         path = file;
         blog.cloudinaryPath = cloudImagPath;
