@@ -13,14 +13,15 @@ exports.getAllBlog = async (req, res) => {
             .then(result => {
                 if(result) {
                     let totalConent = {
-                        title: '', _id: '', value: []
+                        title: '', _id: '', value: [], category: ''
                     }
                     let desResponse = result.description.split('--SPLIT_HERE--');
                     let imageResponse = result.file.split(',');
                     let cloudinaryImage = result.cloudinaryPath.split(',');
+                    
                     trendingTopic(result);
                     for(let i = 0; i < imageResponse.length; i++) {
-                        let blogData = {description: '', file: '', cloudImage:''}
+                        let blogData = {description: '', file: '', cloudImage:'', category: ''}
                          blogData.description = desResponse[i];
                          blogData.file = imageResponse[i];
                          blogData.cloudImage = cloudinaryImage[i];
@@ -28,6 +29,7 @@ exports.getAllBlog = async (req, res) => {
                     } 
                     totalConent.title = result.title;
                     totalConent._id = result._id;
+                    totalConent.category = result.category;
                     res.status(200).send({data: totalConent, comments: result.commentId, rating: result.ratingId});
                 } else {
                     res.status(500).send({message: 'Could not find it'});
@@ -220,8 +222,14 @@ exports.getLatest = async (req, res) => {
 
 exports.getBlogByContent = async (req, res) => {
     try {
-        const { body: {page, limit, category} } = req;
-        filter = {active: true, category: category?.toLowerCase()}
+        const { body } = req;
+        let {category, page, limit} = body
+        page = page || 1;
+        limit = limit || 30;
+        let filter1 = {active: true, category: category?.toLowerCase()};
+        const regex = new RegExp(category, 'i');
+        let filter3 = {description: {$regex : regex}}
+        let filter = {$or:[filter1, filter3]}
         sortingValue = {createdAt: -1}
         blogSchema.find(filter)
         .skip((page - 1) * limit)
@@ -237,7 +245,8 @@ exports.getBlogByContent = async (req, res) => {
         })
 
     } catch (error) {
-       
+        console.log(error,'error here')
+       res.status(400).send({message: error})
     }
 
 }
