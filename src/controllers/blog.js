@@ -242,8 +242,7 @@ exports.getBlogByContent = async (req, res) => {
         })
         .catch(error => {
             res.status(501).send({message: error});
-        })
-
+        });
     } catch (error) {
         console.log(error,'error here')
        res.status(400).send({message: error})
