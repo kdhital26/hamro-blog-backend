@@ -18,15 +18,19 @@ exports.getAllBlog = async (req, res) => {
                     let desResponse = result.description.split('--SPLIT_HERE--');
                     let imageResponse = result.file.split(',');
                     let cloudinaryImage = result.cloudinaryPath.split(',');
-                    
                     trendingTopic(result);
                     for(let i = 0; i < imageResponse.length; i++) {
                         let blogData = {description: '', file: '', cloudImage:'', category: ''}
                          blogData.description = desResponse[i];
-                         blogData.file = imageResponse[i];
+                          blogData.file = imageResponse[i];
                          blogData.cloudImage = cloudinaryImage[i];
                          totalConent.value.push(blogData);
                     } 
+
+                    for(let i = 0; i < cloudinaryImage.length; i++){
+                        
+                    }
+
                     totalConent.title = result.title;
                     totalConent._id = result._id;
                     totalConent.category = result.category;
@@ -57,7 +61,6 @@ exports.getAllBlog = async (req, res) => {
 exports.createBlog = async (req, res) => {
     try {
         const { body, files } = req;
-        console.log(body, 'body here')
         let blog = setBlogValues(body, files, req.cloudinaryPath);
         await blog.save(blog).then(result => {
             if(result) {
@@ -244,7 +247,6 @@ exports.getBlogByContent = async (req, res) => {
             res.status(501).send({message: error});
         });
     } catch (error) {
-        console.log(error,'error here')
        res.status(400).send({message: error})
     }
 
@@ -252,30 +254,49 @@ exports.getBlogByContent = async (req, res) => {
 
 
 function setBlogValues(body, files, cloudinaryURL) {
-    const  {_id, file, description, title, cloudImagPath, category } = body;
+    let  {_id, file, description, title, cloudImagPath, category, count } = body;
     let path = '';
     let blog = new blogSchema();
     blog._id = _id;
     blog.description = description;
     blog.title = title;
     blog.category = category?.toLowerCase();
-    console.log(body, category, 'here')
-    if(file) {
+    let countValue;
+    if(count?.length > 0) {
+        countValue = count?.split(',');
+    }
+    let splitCloudImagePath;
+    //countValue is where, stored the deleted index value so that we can insert image path in their respective index
+        if(countValue?.length ){
+            splitCloudImagePath =  cloudImagPath?.split(',');
+            if(splitCloudImagePath?.length > 0) {
+                for(let x = 0; x < countValue.length; x++) {
+                    splitCloudImagePath.splice(countValue[x], 0, cloudinaryURL[x]);
+                }
+                cloudImagPath = splitCloudImagePath?.toString();
+            }
+        }
+    
+    if(file && !countValue && !countValue?.length) {
         path = file;
-        blog.cloudinaryPath = cloudImagPath;
+        blog.cloudinaryPath = cloudImagPath ? cloudImagPath : '';
     }
     if(file && files.length > 0) {
         path += ',' + files.map(res => res.path)?.toString();
         let cloudPath = cloudinaryURL.toString();
-        blog.cloudinaryPath += cloudPath;
+        if(countValue?.length) {
+            blog.cloudinaryPath = splitCloudImagePath.toString()
+        } else {
+            blog.cloudinaryPath +=  cloudPath;
+        }
+        blog.cloudinaryPath = blog.cloudinaryPath?.split(',').filter(res => {return res}).toString();
     } else if (files.length > 0) {
         path = files.map(res => res.path)?.toString();
         blog.cloudinaryPath = cloudinaryURL.toString();
     }
     // return;
-    blog.file = path;
+    blog.file = blog.cloudinaryPath;
     blog.active = true;
-    // return;
     return blog;
 
 }

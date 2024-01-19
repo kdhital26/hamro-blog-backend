@@ -20,7 +20,7 @@ const helper = (files, req, next) => {
         .then((result) => {
           if (result) {
             count += 1;
-            cloudinaryUrl.push(result.url);
+            cloudinaryUrl.unshift(result.url);
             req.cloudinaryPath = cloudinaryUrl;
             if (count === fileLength) {
               return next();
