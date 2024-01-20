@@ -229,9 +229,9 @@ exports.getBlogByContent = async (req, res) => {
         let {category, page, limit} = body
         page = page || 1;
         limit = limit || 30;
-        let filter1 = {active: true, category: category?.toLowerCase()};
         const regex = new RegExp(category, 'i');
-        let filter3 = {description: {$regex : regex}}
+        let filter1 = {category: category?.toLowerCase(), active: true};
+        let filter3 = {description: {$regex : regex}, active: true}
         let filter = {$or:[filter1, filter3]}
         sortingValue = {createdAt: -1}
         blogSchema.find(filter)

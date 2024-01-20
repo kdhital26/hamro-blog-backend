@@ -10,7 +10,7 @@ exports.getAllRating = async (req, res) => {
                 return acc += curr.rating
             }, 0);
             const avarageRating = totalRating / totalCount
-            res.status(200).send({rating: +avarageRating.toFixed()});
+            res.status(200).send({rating: +avarageRating.toFixed(), ratingsData: result});
         }).catch(error => {
             res.status(501).send({message: error})
         })
