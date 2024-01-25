@@ -279,7 +279,7 @@ function setBlogValues(body, files, cloudinaryURL) {
     blog.description = description;
     blog.title = title;
     blog.category = category?.toLowerCase();
-    blog.loggedInUser = 'kabin31686';
+    blog.loggedInUser = loggedInUser;
     let countValue;
     if(count?.length > 0) {
         countValue = count?.split(',');
