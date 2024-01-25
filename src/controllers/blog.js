@@ -58,10 +58,27 @@ exports.getAllBlog = async (req, res) => {
     }
 }
 
+exports.getBlogsByUser = async (req, res) => {
+    const { query : {userName, page, limit}} = req;
+    let filter = {loggedInUser: userName, active: true}
+    await blogSchema.find(filter)
+    .populate('ratingId')
+    .populate('commentId')
+    .then(result => {
+    if(result) {
+            res.status(200).send({data: result});
+        } else {
+            res.status(500).send({message: 'Could not find it'});
+        }
+    })
+}
+
 exports.createBlog = async (req, res) => {
     try {
         const { body, files } = req;
         let blog = setBlogValues(body, files, req.cloudinaryPath);
+        console.log(blog, 'blog here')
+
         await blog.save(blog).then(result => {
             if(result) {
                res.status(200).send({message: 'Saved Successfully', data: result})
@@ -83,6 +100,7 @@ exports.updateBlog = async (req, res) => {
         const { files } = req;
         const updateType = {new: true, upsert: true};
         const blogUpdate = setBlogValues(req.body, files, req.cloudinaryPath);
+        console.log(blogUpdate, 'blog data here')
          blogSchema.findByIdAndUpdate(_id, blogUpdate, updateType)
          .then(result => {
             if(result) {
@@ -254,13 +272,14 @@ exports.getBlogByContent = async (req, res) => {
 
 
 function setBlogValues(body, files, cloudinaryURL) {
-    let  {_id, file, description, title, cloudImagPath, category, count } = body;
+    let  {_id, file, description, title, cloudImagPath, category, count, loggedInUser } = body;
     let path = '';
     let blog = new blogSchema();
     blog._id = _id;
     blog.description = description;
     blog.title = title;
     blog.category = category?.toLowerCase();
+    blog.loggedInUser = 'kabin31686';
     let countValue;
     if(count?.length > 0) {
         countValue = count?.split(',');

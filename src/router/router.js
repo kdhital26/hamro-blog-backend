@@ -4,7 +4,8 @@ const routes = express.Router();
 const blogController = require('../controllers/blog');
 const ratingController = require('../controllers/rating')
 const files = require('../middleware/file-middleware');
-const cloudinaryHelper = require('../middleware/cloudinary').helper
+const cloudinaryHelper = require('../middleware/cloudinary').helper;
+const userController = require('../controllers/user');
 
 
 
@@ -19,6 +20,7 @@ routes.post('/createblog', files.array('image'), ((req, res, next) => {
 routes.post('/updateblog', files.array('image'), ((req, res, next) => {
     cloudinaryHelper(req.files, req, next);
 }), blogController.updateBlog);
+routes.get('/getBlogsByUser', blogController.getBlogsByUser);
 
 routes.post('/deleteblog', files.single('image'), blogController.deleteBlog); //soft delete only
 routes.post('/setRating', blogController.setRating);
@@ -31,6 +33,8 @@ routes.get('/getAllRating', ratingController.getAllRating);
 //for testing purpose only, if it goes to production please comment this piece of code;
 routes.delete('/deleteall', blogController.deleteAll);
 
-
+//users API here
+routes.post('/getUsers', userController.getAllUsers);
+routes.post('/createUser', userController.createUsers);
 
 module.exports = routes;
