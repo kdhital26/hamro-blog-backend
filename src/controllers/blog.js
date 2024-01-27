@@ -269,14 +269,14 @@ exports.getBlogByContent = async (req, res) => {
 
 
 function setBlogValues(body, files, cloudinaryURL) {
-    let  {_id, file, description, title, cloudImagPath, category, count, loggedInUser } = body;
+    let  {_id, file, description, title, cloudImagPath, category, count, userName } = body;
     let path = '';
     let blog = new blogSchema();
     blog._id = _id;
     blog.description = description;
     blog.title = title;
     blog.category = category?.toLowerCase();
-    blog.loggedInUser = loggedInUser;
+    blog.loggedInUser = userName;
     let countValue;
     if(count?.length > 0) {
         countValue = count?.split(',');
