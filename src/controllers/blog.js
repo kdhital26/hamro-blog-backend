@@ -44,6 +44,9 @@ exports.getAllBlog = async (req, res) => {
             await blogSchema.find(filter)
             .populate('ratingId')
             .populate('commentId')
+            .sort({
+                createdAt: -1
+            })
             .then(result => {
                 if(result) {
                     res.status(200).send({data: result});
