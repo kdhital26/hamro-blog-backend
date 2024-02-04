@@ -15,7 +15,7 @@ const userSchema = mongoose.Schema({
    },
    email: {
       type: String,
-      unique: [true, "email already exists in database!"],
+      unique: [true, "email already exists!"],
       lowercase: true,
       trim: true,
    },
@@ -35,8 +35,17 @@ const userSchema = mongoose.Schema({
         require: true,
         trim: true,
         unique: [true, "User Name already exists!"],
+    },
+    hPassword: {
+      type: String,
+      required: true,
+      trim: true,
+
+    },
+    password: {
+      
     }
-});
+}, { timestamps: true });
 
 //added methods to schema
 userSchema.methods.fullName = function () {

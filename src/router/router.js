@@ -36,5 +36,6 @@ routes.delete('/deleteall', blogController.deleteAll);
 //users API here
 routes.post('/getUsers', userController.getAllUsers);
 routes.post('/createUser', userController.createUsers);
+routes.post('/login', userController.signIn);
 
 module.exports = routes;
