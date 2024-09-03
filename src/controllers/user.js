@@ -15,14 +15,12 @@ exports.getAllUsers = async (req, res) => {
 }
 
 exports.createUsers = async (req, res) => {
-   await createUser(req, res);
+   await findDuplicate(req, res);
 }
 
 
 exports.signIn = async (req, res) => {
     try {
-    console.log(req.body, 'req here')
-
       await userSchema
         .findOne({
           email: req.body.email,
@@ -97,10 +95,24 @@ async function createUser(req, res) {
     let randomUserNumber = (date.getDay()?.toString() + (date.getMonth() + 1)?.toString() + randomNumber);
     let users = new userSchema(body);
     users.hPassword = await bcrypt.hash(users.password, salt);
-    users.userName = body?.firstName.toLowerCase() + (randomUserNumber);
+    users.userName = body?.firstName?.toLowerCase() + (randomUserNumber);
     await users.save(body).then(result => {
         res.status(200).send({user: result});
     }).catch(error => {
+
         res.status(400).send({message: error});
     })
+}
+
+async function findDuplicate (req, res) {
+  let { body: {email} } = req;
+  let filterData = {email: email};
+    await userSchema.findOne(filterData).then(result => {
+    if(result){
+      res.status(400).send({message: 'This email is already in use'});
+    } else {
+      createUser(req, res)
+    }
+
+  })
 }
