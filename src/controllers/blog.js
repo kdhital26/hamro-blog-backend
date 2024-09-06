@@ -13,7 +13,7 @@ exports.getAllBlog = async (req, res) => {
             .then(result => {
                 if(result) {
                     let totalConent = {
-                        title: '', _id: '', value: [], category: ''
+                        title: '', _id: '', value: [], category: '', createdBy:'', createdAt: ''
                     }
                     let desResponse = result.description.split('--SPLIT_HERE--');
                     let imageResponse = result.file.split(',');
@@ -27,13 +27,12 @@ exports.getAllBlog = async (req, res) => {
                          totalConent.value.push(blogData);
                     } 
 
-                    for(let i = 0; i < cloudinaryImage.length; i++){
-                        
-                    }
-
+                   
                     totalConent.title = result.title;
                     totalConent._id = result._id;
                     totalConent.category = result.category;
+                    totalConent.createdAt = result.createdAt;
+                    totalConent.createdBy = result.loggedInUser;
                     res.status(200).send({data: totalConent, comments: result.commentId, rating: result.ratingId});
                 } else {
                     res.status(500).send({message: 'Could not find it'});
