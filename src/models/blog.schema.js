@@ -39,6 +39,10 @@ const blogSchema = mongoose.Schema({
         type: String,
         trim: true,
         required: true
+    }, 
+    loggedInUser: {
+        type: String,
+        trim: true
     }
 }, { timestamps: true });
 

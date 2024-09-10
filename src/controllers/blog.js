@@ -13,23 +13,26 @@ exports.getAllBlog = async (req, res) => {
             .then(result => {
                 if(result) {
                     let totalConent = {
-                        title: '', _id: '', value: [], category: ''
+                        title: '', _id: '', value: [], category: '', createdBy:'', createdAt: ''
                     }
                     let desResponse = result.description.split('--SPLIT_HERE--');
                     let imageResponse = result.file.split(',');
                     let cloudinaryImage = result.cloudinaryPath.split(',');
-                    
                     trendingTopic(result);
                     for(let i = 0; i < imageResponse.length; i++) {
                         let blogData = {description: '', file: '', cloudImage:'', category: ''}
                          blogData.description = desResponse[i];
-                         blogData.file = imageResponse[i];
+                          blogData.file = imageResponse[i];
                          blogData.cloudImage = cloudinaryImage[i];
                          totalConent.value.push(blogData);
                     } 
+
+                   
                     totalConent.title = result.title;
                     totalConent._id = result._id;
                     totalConent.category = result.category;
+                    totalConent.createdAt = result.createdAt;
+                    totalConent.createdBy = result.loggedInUser;
                     res.status(200).send({data: totalConent, comments: result.commentId, rating: result.ratingId});
                 } else {
                     res.status(500).send({message: 'Could not find it'});
@@ -40,6 +43,9 @@ exports.getAllBlog = async (req, res) => {
             await blogSchema.find(filter)
             .populate('ratingId')
             .populate('commentId')
+            .sort({
+                createdAt: -1
+            })
             .then(result => {
                 if(result) {
                     res.status(200).send({data: result});
@@ -54,10 +60,24 @@ exports.getAllBlog = async (req, res) => {
     }
 }
 
+exports.getBlogsByUser = async (req, res) => {
+    const { query : {userName, page, limit}} = req;
+    let filter = {loggedInUser: userName, active: true}
+    await blogSchema.find(filter)
+    .populate('ratingId')
+    .populate('commentId')
+    .then(result => {
+    if(result) {
+            res.status(200).send({data: result});
+        } else {
+            res.status(500).send({message: 'Could not find it'});
+        }
+    })
+}
+
 exports.createBlog = async (req, res) => {
     try {
         const { body, files } = req;
-        console.log(body, 'body here')
         let blog = setBlogValues(body, files, req.cloudinaryPath);
         await blog.save(blog).then(result => {
             if(result) {
@@ -226,9 +246,9 @@ exports.getBlogByContent = async (req, res) => {
         let {category, page, limit} = body
         page = page || 1;
         limit = limit || 30;
-        let filter1 = {active: true, category: category?.toLowerCase()};
         const regex = new RegExp(category, 'i');
-        let filter3 = {description: {$regex : regex}}
+        let filter1 = {category: category?.toLowerCase(), active: true};
+        let filter3 = {description: {$regex : regex}, active: true}
         let filter = {$or:[filter1, filter3]}
         sortingValue = {createdAt: -1}
         blogSchema.find(filter)
@@ -242,10 +262,8 @@ exports.getBlogByContent = async (req, res) => {
         })
         .catch(error => {
             res.status(501).send({message: error});
-        })
-
+        });
     } catch (error) {
-        console.log(error,'error here')
        res.status(400).send({message: error})
     }
 
@@ -253,30 +271,50 @@ exports.getBlogByContent = async (req, res) => {
 
 
 function setBlogValues(body, files, cloudinaryURL) {
-    const  {_id, file, description, title, cloudImagPath, category } = body;
+    let  {_id, file, description, title, cloudImagPath, category, count, userName } = body;
     let path = '';
     let blog = new blogSchema();
     blog._id = _id;
     blog.description = description;
     blog.title = title;
     blog.category = category?.toLowerCase();
-    console.log(body, category, 'here')
-    if(file) {
+    blog.loggedInUser = userName;
+    let countValue;
+    if(count?.length > 0) {
+        countValue = count?.split(',');
+    }
+    let splitCloudImagePath;
+    //countValue is where, stored the deleted index value so that we can insert image path in their respective index
+        if(countValue?.length ){
+            splitCloudImagePath =  cloudImagPath?.split(',');
+            if(splitCloudImagePath?.length > 0) {
+                for(let x = 0; x < countValue.length; x++) {
+                    splitCloudImagePath.splice(countValue[x], 0, cloudinaryURL[x]);
+                }
+                cloudImagPath = splitCloudImagePath?.toString();
+            }
+        }
+    
+    if(file && !countValue && !countValue?.length) {
         path = file;
-        blog.cloudinaryPath = cloudImagPath;
+        blog.cloudinaryPath = cloudImagPath ? cloudImagPath : '';
     }
     if(file && files.length > 0) {
         path += ',' + files.map(res => res.path)?.toString();
         let cloudPath = cloudinaryURL.toString();
-        blog.cloudinaryPath += cloudPath;
+        if(countValue?.length) {
+            blog.cloudinaryPath = splitCloudImagePath.toString()
+        } else {
+            blog.cloudinaryPath +=  cloudPath;
+        }
+        blog.cloudinaryPath = blog.cloudinaryPath?.split(',').filter(res => {return res}).toString();
     } else if (files.length > 0) {
         path = files.map(res => res.path)?.toString();
         blog.cloudinaryPath = cloudinaryURL.toString();
     }
     // return;
-    blog.file = path;
+    blog.file = blog.cloudinaryPath;
     blog.active = true;
-    // return;
     return blog;
 
 }
