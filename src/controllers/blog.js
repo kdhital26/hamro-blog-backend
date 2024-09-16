@@ -1,6 +1,7 @@
 const blogSchema = require('../models/blog.schema');
-const ratingSchema = require('../models/blogRating.schema')
-const commentSchema = require('../models/blogComments.schema')
+const ratingSchema = require('../models/blogRating.schema');
+const commentSchema = require('../models/blogComments.schema');
+
 // const headerSchema = require('../models/header.schema')
 
 exports.getAllBlog = async (req, res) => {
@@ -13,7 +14,7 @@ exports.getAllBlog = async (req, res) => {
             .then(result => {
                 if(result) {
                     let totalConent = {
-                        title: '', _id: '', value: [], category: '', createdBy:'', createdAt: ''
+                        title: '', _id: '', value: [], category: '', createdBy:'', createdAt: '', count: 0
                     }
                     let desResponse = result.description.split('--SPLIT_HERE--');
                     let imageResponse = result.file.split(',');
@@ -25,14 +26,13 @@ exports.getAllBlog = async (req, res) => {
                           blogData.file = imageResponse[i];
                          blogData.cloudImage = cloudinaryImage[i];
                          totalConent.value.push(blogData);
-                    } 
-
-                   
+                    }
                     totalConent.title = result.title;
-                    totalConent._id = result._id;
-                    totalConent.category = result.category;
-                    totalConent.createdAt = result.createdAt;
-                    totalConent.createdBy = result.loggedInUser;
+					totalConent._id = result._id;
+					totalConent.category = result.category;
+					totalConent.createdAt = result.createdAt;
+					totalConent.createdBy = result.loggedInUser;
+					totalConent.count = result.count;
                     res.status(200).send({data: totalConent, comments: result.commentId, rating: result.ratingId});
                 } else {
                     res.status(500).send({message: 'Could not find it'});
@@ -319,18 +319,6 @@ function setBlogValues(body, files, cloudinaryURL) {
 
 }
 
-
-
-function  trendingTopic(value) {
-    const filterValue = {_id: value._id}
-    const totalCount = value.count += 1;
-    const updateType = {new: true, findAndModify: true};
-    blogSchema.findOneAndUpdate(filterValue, {count: totalCount}, updateType)
-        .then(data => {
-        return data;
-    })
-}
-
 //testing //testing toohere
 exports.deleteAll = async (req, res) => {
     try {
@@ -343,3 +331,22 @@ exports.deleteAll = async (req, res) => {
       res.status(400).send({error: error})
     }
   }
+
+  function  trendingTopic(value) {
+    const filterValue = {_id: value._id}
+    const totalCount = value.count += 1;
+    const updateType = {new: true, findAndModify: true};
+    blogSchema.findOneAndUpdate(filterValue, {count: totalCount}, updateType)
+        .then(data => {
+        return data;
+    })
+}
+
+function getAllBlogsDetails(totalConent) {
+	totalConent.title = result.title;
+	totalConent._id = result._id;
+	totalConent.category = result.category;
+	totalConent.createdAt = result.createdAt;
+	totalConent.createdBy = result.loggedInUser;
+	totalConent.count = result.count;
+}

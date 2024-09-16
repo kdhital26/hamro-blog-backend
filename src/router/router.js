@@ -6,6 +6,7 @@ const ratingController = require('../controllers/rating')
 const files = require('../middleware/file-middleware');
 const cloudinaryHelper = require('../middleware/cloudinary').helper;
 const userController = require('../controllers/user');
+const bookmarkController = require('../controllers/bookmark');
 
 
 
@@ -37,5 +38,10 @@ routes.delete('/deleteall', blogController.deleteAll);
 routes.post('/getUsers', userController.getAllUsers);
 routes.post('/createUser', userController.createUsers);
 routes.post('/login', userController.signIn);
+
+//bookmark API Here
+routes.post('/createBookmark', bookmarkController.createBookmark);
+routes.post('/getAllBookmarked', bookmarkController.getAllBookmarked);
+
 
 module.exports = routes;
