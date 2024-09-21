@@ -96,10 +96,12 @@ exports.createBlog = async (req, res) => {
 
 exports.updateBlog = async (req, res) => {
     try {
+
         const { _id } = req.body;
         const { files } = req;
         const updateType = {new: true, upsert: true};
         const blogUpdate = setBlogValues(req.body, files, req.cloudinaryPath);
+
          blogSchema.findByIdAndUpdate(_id, blogUpdate, updateType)
          .then(result => {
             if(result) {
@@ -271,18 +273,30 @@ exports.getBlogByContent = async (req, res) => {
 
 
 function setBlogValues(body, files, cloudinaryURL) {
-    let  {_id, file, description, title, cloudImagPath, category, count, userName } = body;
+    let  {_id, file, description, title, cloudImagPath, category, count, userName, view, commentId } = body;
     let path = '';
+    let comments = [];
+    if(commentId){
+        comments = JSON.parse(commentId);
+    }
     let blog = new blogSchema();
     blog._id = _id;
     blog.description = description;
     blog.title = title;
     blog.category = category?.toLowerCase();
     blog.loggedInUser = userName;
+    if(view){
+        blog.count = view > 0 ? view : 0;
+    }
+    
     let countValue;
     if(count?.length > 0) {
         countValue = count?.split(',');
     }
+    if(comments?.length > 0){
+        blog.commentId = comments.map(res => res._id);
+    }
+
     let splitCloudImagePath;
     //countValue is where, stored the deleted index value so that we can insert image path in their respective index
         if(countValue?.length ){
@@ -342,11 +356,3 @@ exports.deleteAll = async (req, res) => {
     })
 }
 
-function getAllBlogsDetails(totalConent) {
-	totalConent.title = result.title;
-	totalConent._id = result._id;
-	totalConent.category = result.category;
-	totalConent.createdAt = result.createdAt;
-	totalConent.createdBy = result.loggedInUser;
-	totalConent.count = result.count;
-}
