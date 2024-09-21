@@ -16,6 +16,7 @@ const blogSchema = mongoose.Schema({
         trim: true,
     },
     ratingId: {type: mongoose.Schema.Types.ObjectId, ref: 'blograting'},
+    bookmarkId: {type: mongoose.Schema.Types.ObjectId, ref: 'bookmark'},
     commentId: [
         {
             type: mongoose.Schema.Types.ObjectId, ref: 'comment'
@@ -43,6 +44,9 @@ const blogSchema = mongoose.Schema({
     loggedInUser: {
         type: String,
         trim: true
+    },
+    bookMarked:{
+        type: Boolean
     }
 }, { timestamps: true });
 

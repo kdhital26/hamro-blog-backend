@@ -1,6 +1,7 @@
 const blogSchema = require('../models/blog.schema');
-const ratingSchema = require('../models/blogRating.schema')
-const commentSchema = require('../models/blogComments.schema')
+const ratingSchema = require('../models/blogRating.schema');
+const commentSchema = require('../models/blogComments.schema');
+
 // const headerSchema = require('../models/header.schema')
 
 exports.getAllBlog = async (req, res) => {
@@ -13,7 +14,7 @@ exports.getAllBlog = async (req, res) => {
             .then(result => {
                 if(result) {
                     let totalConent = {
-                        title: '', _id: '', value: [], category: '', createdBy:'', createdAt: ''
+                        title: '', _id: '', value: [], category: '', createdBy:'', createdAt: '', count: 0
                     }
                     let desResponse = result.description.split('--SPLIT_HERE--');
                     let imageResponse = result.file.split(',');
@@ -25,14 +26,13 @@ exports.getAllBlog = async (req, res) => {
                           blogData.file = imageResponse[i];
                          blogData.cloudImage = cloudinaryImage[i];
                          totalConent.value.push(blogData);
-                    } 
-
-                   
+                    }
                     totalConent.title = result.title;
-                    totalConent._id = result._id;
-                    totalConent.category = result.category;
-                    totalConent.createdAt = result.createdAt;
-                    totalConent.createdBy = result.loggedInUser;
+					totalConent._id = result._id;
+					totalConent.category = result.category;
+					totalConent.createdAt = result.createdAt;
+					totalConent.createdBy = result.loggedInUser;
+					totalConent.count = result.count;
                     res.status(200).send({data: totalConent, comments: result.commentId, rating: result.ratingId});
                 } else {
                     res.status(500).send({message: 'Could not find it'});
@@ -96,10 +96,12 @@ exports.createBlog = async (req, res) => {
 
 exports.updateBlog = async (req, res) => {
     try {
+
         const { _id } = req.body;
         const { files } = req;
         const updateType = {new: true, upsert: true};
         const blogUpdate = setBlogValues(req.body, files, req.cloudinaryPath);
+
          blogSchema.findByIdAndUpdate(_id, blogUpdate, updateType)
          .then(result => {
             if(result) {
@@ -271,18 +273,30 @@ exports.getBlogByContent = async (req, res) => {
 
 
 function setBlogValues(body, files, cloudinaryURL) {
-    let  {_id, file, description, title, cloudImagPath, category, count, userName } = body;
+    let  {_id, file, description, title, cloudImagPath, category, count, userName, view, commentId } = body;
     let path = '';
+    let comments = [];
+    if(commentId){
+        comments = JSON.parse(commentId);
+    }
     let blog = new blogSchema();
     blog._id = _id;
     blog.description = description;
     blog.title = title;
     blog.category = category?.toLowerCase();
     blog.loggedInUser = userName;
+    if(view){
+        blog.count = view > 0 ? view : 0;
+    }
+    
     let countValue;
     if(count?.length > 0) {
         countValue = count?.split(',');
     }
+    if(comments?.length > 0){
+        blog.commentId = comments.map(res => res._id);
+    }
+
     let splitCloudImagePath;
     //countValue is where, stored the deleted index value so that we can insert image path in their respective index
         if(countValue?.length ){
@@ -319,18 +333,6 @@ function setBlogValues(body, files, cloudinaryURL) {
 
 }
 
-
-
-function  trendingTopic(value) {
-    const filterValue = {_id: value._id}
-    const totalCount = value.count += 1;
-    const updateType = {new: true, findAndModify: true};
-    blogSchema.findOneAndUpdate(filterValue, {count: totalCount}, updateType)
-        .then(data => {
-        return data;
-    })
-}
-
 //testing //testing toohere
 exports.deleteAll = async (req, res) => {
     try {
@@ -343,3 +345,14 @@ exports.deleteAll = async (req, res) => {
       res.status(400).send({error: error})
     }
   }
+
+  function  trendingTopic(value) {
+    const filterValue = {_id: value._id}
+    const totalCount = value.count += 1;
+    const updateType = {new: true, findAndModify: true};
+    blogSchema.findOneAndUpdate(filterValue, {count: totalCount}, updateType)
+        .then(data => {
+        return data;
+    })
+}
+
